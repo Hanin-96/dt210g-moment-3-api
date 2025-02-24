@@ -10,11 +10,21 @@ const databaseConnection = require('./database/connectDatabase');
 //Användning av .env fil för användning av variabler
 require("dotenv").config();
 
+const Path = require('path');
+const Inert = require('@hapi/inert');
+const fs = require('fs');
+
 const init = async () => {
+    const UPLOAD_PATH = Path.join(__dirname, 'uploads');
+
+    //Skapar server
     const server = Hapi.server({
         port: process.env.PORT || 3000,
         host: 'localhost',
         routes: {
+            files: {
+                relativeTo: UPLOAD_PATH
+            },
             cors: {
                 origin: ['*'],
                 credentials: true,
@@ -28,18 +38,18 @@ const init = async () => {
         }
     });
 
+    //Skapar uploads-katalog om den ej finns
+    if (!fs.existsSync(UPLOAD_PATH)) {
+        fs.mkdirSync(UPLOAD_PATH);
+    }
+
+    // Plugins
+    await server.register(Inert);
+
     //Koppla till databasen
     databaseConnection();
 
-    server.route({
-        method: 'GET',
-        path: '/',
-        handler: function (request, h) {
-            console.log("Hello World!");
-            return 'Hello World!';
-
-        }
-    });
+    require('./routes/imageRoute')(server, UPLOAD_PATH);
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
