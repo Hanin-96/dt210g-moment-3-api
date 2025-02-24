@@ -23,8 +23,8 @@ const imageSchema = new Mongoose.Schema({
         unique: true,
         trim: true
     },
-    user: {
-        type: Mongoose.Schema.Types.ObjectId, 
+    userId: {
+        type: Mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
@@ -32,7 +32,6 @@ const imageSchema = new Mongoose.Schema({
         type: Date,
         default: Date.now
     },
-
 });
 
 

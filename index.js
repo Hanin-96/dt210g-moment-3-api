@@ -3,6 +3,8 @@ const Hapi = require("@hapi/hapi");
 
 //Hämtar routes
 const routes = require('./routes/allRoutes');
+const userRoute = require('./routes/userRoute');
+const imageRoute = require('./routes/imageRoute');
 
 //Hämtar databas koppling
 const databaseConnection = require('./database/connectDatabase');
@@ -49,7 +51,8 @@ const init = async () => {
     //Koppla till databasen
     databaseConnection();
 
-    require('./routes/imageRoute')(server, UPLOAD_PATH);
+    server.route(imageRoute(UPLOAD_PATH));
+    server.route(userRoute);
 
     await server.start();
     console.log('Server running on %s', server.info.uri);
