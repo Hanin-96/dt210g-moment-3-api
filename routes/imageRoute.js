@@ -18,12 +18,12 @@ const imageRouteArr = (uploadPath) => [
     },
     {
         method: 'GET',
-        path: '/upload',
+        path: '/images',
         handler: imageController.getImages()
     },
     {
         method: 'GET',
-        path: '/upload/{fileName}',
+        path: '/image/{fileName}',
         handler: imageController.getFile(uploadPath)
     }
 ]
