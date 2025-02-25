@@ -3,6 +3,7 @@ const imageController = require("../controllers/image.controller");
 
 const imageRouteArr = (uploadPath) => [
     {
+        //Ladda upp ny bildfil som inloggad användare
         method: "POST",
         path: "/upload/{userId}",
         options: {
@@ -17,11 +18,13 @@ const imageRouteArr = (uploadPath) => [
         handler: imageController.uploadFile(uploadPath)
     },
     {
+        //Hämta alla bild url
         method: 'GET',
         path: '/images',
         handler: imageController.getImages()
     },
     {
+        //Hämta specifik bild
         method: 'GET',
         path: '/image/{fileName}',
         handler: imageController.getFile(uploadPath)

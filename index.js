@@ -22,7 +22,7 @@ const init = async () => {
     //Skapar server
     const server = Hapi.server({
         port: process.env.PORT || 3000,
-        host: /*'localhost'*/ '0.0.0.0',
+        host: 'localhost' /*'0.0.0.0'*/,
         routes: {
             files: {
                 relativeTo: UPLOAD_PATH

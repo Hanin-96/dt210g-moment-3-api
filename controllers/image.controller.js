@@ -12,19 +12,19 @@ exports.uploadFile = (uploadPath) => async (request, h) => {
 
 
     if (!file) {
-        return h.response({ message: "No file was sent" }).code(400);
+        return h.response({ message: "Ingen fil skickades" }).code(400);
     }
 
     if(!userId) {
-        return h.response({ message: "User not found" }).code(404);
+        return h.response({ message: "Ingen användare kunde hittas" }).code(404);
     }
 
     try {
         const userExists = await User.findById(userId);
         if (!userExists) {
-            return h.response({ message: "User not found" }).code(404);
+            return h.response({ message: "Ingen användare kunde hittas" }).code(404);
         }
-        console.log("User found:", userExists);
+        console.log("Användare:", userExists);
 
         //Filuppladdningen får unikt namn med timestamp
         const fileName = `${Date.now()}-${file.hapi.filename}`;
@@ -59,7 +59,7 @@ exports.uploadFile = (uploadPath) => async (request, h) => {
         const uploadedImage = await newImage.save();
 
         return h.response({
-            message: "Image has been saved",
+            message: "Bild har lagrats",
             savedImage: uploadedImage,
         }).code(200);
 
@@ -86,7 +86,7 @@ exports.getFile = (uploadPath) => async (request, h) => {
     console.log(fileName);
     console.log(filePath);
     if (!fs.existsSync(filePath)) {
-        return h.response({ message: 'File not found' }).code(404);
+        return h.response({ message: 'Fil kunde ej hittas' }).code(404);
     }
     //console.log(images.title);
 

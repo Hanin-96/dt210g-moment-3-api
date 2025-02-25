@@ -1,4 +1,5 @@
 const userController = require("../controllers/user.controller");
+const authToken = require("../authToken");
 
 /*
 module.exports = () => {
@@ -20,14 +21,36 @@ module.exports = () => {
 
 const userRouteArr = [
     {
+        //Lägg till ny användare
         method: "POST",
         path: "/user",
         handler: userController.postUser
     },
     {
+        //Hämta användare
         method: "GET",
         path: "/user",
         handler: userController.getUsers
+    },
+    {
+        //Logga in användare
+        method: "POST",
+        path: "/login",
+        handler: userController.loginUser
+    },
+    {
+        //Hämta skyddad data som användare
+        method: "GET",
+        path: "/userpage",
+        options: {
+            pre: [
+                {
+                    method: authToken
+                }
+
+            ]
+        },
+        handler: userController.getUserPage
     }
 
 
