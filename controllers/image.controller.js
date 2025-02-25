@@ -32,6 +32,8 @@ exports.uploadFile = (uploadPath) => async (request, h) => {
         // Kombinerar sökväg till uppladdningsmapp med filnamnet för att skapa sökvägen där filen ska sparas.
         const path = Path.join(uploadPath, fileName);
 
+        console.log("Image saved at: " + path);
+
         /* 
         Initierar writeSteam för att kunna skriva data till sökvägen ovan.
         Detta öppnar filen i skrivläge. Om filen inte finns skapas den, och om den finns skrivs den över.
