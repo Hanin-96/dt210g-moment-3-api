@@ -19,7 +19,7 @@ const authToken = async (request, h) => {
 
         // Spara användarinformation i request-objektet
         request.username = verifiedData.username;
-        console.log("Verifierad data: " + verifiedData.username)
+        //console.log("Verifierad data: " + verifiedData.username)
 
         return h.continue;
 

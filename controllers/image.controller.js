@@ -15,7 +15,7 @@ exports.uploadFile = (uploadPath) => async (request, h) => {
         return h.response({ message: "Ingen fil skickades" }).code(400);
     }
 
-    if(!userId) {
+    if (!userId) {
         return h.response({ message: "Ingen användare kunde hittas" }).code(404);
     }
 
@@ -75,20 +75,134 @@ exports.uploadFile = (uploadPath) => async (request, h) => {
     }
 }
 
-exports.getImages = () => async (request, h) => {
-    const images = await Image.find();
+exports.getImages = async (request, h) => {
+    const images = await Image.find().populate("userId", "username firstname lastname");
     return h.response({ images: images });
 }
 
-exports.getFile = (uploadPath) => async (request, h) => {
-    const { fileName } = request.params; // bildens namn skickas med
-    const filePath = Path.join(uploadPath, fileName);
-    console.log(fileName);
-    console.log(filePath);
-    if (!fs.existsSync(filePath)) {
-        return h.response({ message: 'Fil kunde ej hittas' }).code(404);
-    }
-    //console.log(images.title);
+exports.getImage = async (request, h) => {
+    //Bildens namn skickas med
+    const { imageId } = request.params;
+    try {
+        const image = await Image.findById(imageId).populate("userId", "username firstname lastname");
 
-    return h.file(filePath); // Returnerar filen från servern
+        if (!image) {
+            return h.response({ error: "Bilden hittades inte" }).code(404);
+        }
+
+        const imageUrl = image.fileName;
+
+        return h.response({
+            title: image.title,
+            description: image.description,
+            fileName: imageUrl,
+            userId: image.userId?._id,
+            username: image.userId?.username,
+            firstname: image.userId?.firstname,
+            lastname: image.userId?.lastname
+
+        })
+    } catch (error) {
+        console.error(error);
+        return h.response({ message: error }).code(500);
+    }
+
+}
+
+exports.getFile = (uploadPath) => async (request, h) => {
+    //Bildens namn skickas med
+    const { fileName } = request.params;
+    try {
+        const image = await Image.findOne({ fileName });
+
+        if (!image) {
+            return h.response({ error: "Bilden hittades inte" }).code(404);
+        }
+
+        const filePath = Path.join(uploadPath, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            return h.response({ message: 'Fil kunde ej hittas' }).code(404);
+        }
+
+        return h.file(filePath); // Returnerar filen från servern
+
+    } catch (error) {
+        console.error(error);
+        return h.response({ message: error }).code(500);
+    }
+
+}
+
+exports.deleteImage = (uploadPath) => async (request, h) => {
+    try {
+        const { imageId } = request.params;
+        console.log(imageId);
+        const image = await Image.findById(imageId);
+        console.log(image);
+        const fileName = image.fileName;  // Hämta filnamnet från databasen
+        console.log('Filnamn att ta bort:', fileName);
+
+        const filePath = Path.join(uploadPath, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            return h.response({ message: 'Fil kunde ej hittas' }).code(404);
+        }
+
+        if (!image) {
+            return h.response({ message: "Bilden finns inte i databasen" }).code(404);
+        }
+
+        // Ta bort bildposten från databasen
+        await Image.findByIdAndDelete(imageId);
+        console.log('Bild borttagen:', fileName);
+
+        //Ta bort bildfil från serverns filssystem
+        try {
+            await fs.promises.unlink(filePath);
+            return h.response({ message: "Bildfilen är borttagen" }).code(200);
+        } catch (error) {
+            return h.response({ message: "Det gick inte att ta bort bildfilen" }).code(500);
+        }
+
+    } catch (error) {
+        console.error(error);
+        return h.response(err).code(500);
+    }
+}
+
+exports.updateImage = async (request, h) => {
+    /*
+    const { imageId } = request.params;
+    //Hämta filen från request payload
+
+    console.log(request.payload);
+    const { title, description } = request.payload;
+    */
+
+    try {
+        const { imageId } = request.params;
+
+        const updatedImageInfo = await Image.findByIdAndUpdate(
+            imageId,
+            request.payload,
+            { new: true }
+        );
+
+        if (updatedImageInfo) {
+            return h.response({
+                message: "Bildinformation har uppdaterats",
+                updatedImage: updatedImageInfo
+            }).code(200);
+        } else {
+            return h.response("Bilden finns inte").code(404);
+
+        }
+
+
+    } catch (error) {
+        return h.response(error).code(500);
+    }
+
+
 }

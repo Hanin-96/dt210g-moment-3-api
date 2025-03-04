@@ -35,5 +35,5 @@ const imageSchema = new Mongoose.Schema({
 });
 
 
-const Image = Mongoose.model("image", imageSchema);
+const Image = Mongoose.model("Image", imageSchema);
 module.exports = Image;

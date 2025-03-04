@@ -1,5 +1,6 @@
 
 const imageController = require("../controllers/image.controller");
+const authToken = require("../authToken");
 
 const imageRouteArr = (uploadPath) => [
     {
@@ -12,7 +13,13 @@ const imageRouteArr = (uploadPath) => [
                 parse: true,
                 allow: "multipart/form-data",
                 multipart: { output: 'stream' }
-            }
+            },
+                pre: [
+                {
+                    method: authToken
+                }
+
+            ]
 
         },
         handler: imageController.uploadFile(uploadPath)
@@ -21,47 +28,48 @@ const imageRouteArr = (uploadPath) => [
         //Hämta alla bild url
         method: 'GET',
         path: '/images',
-        handler: imageController.getImages()
+        handler: imageController.getImages
     },
     {
         //Hämta specifik bild
         method: 'GET',
-        path: '/image/{fileName}',
+        path: '/file/{fileName}',
         handler: imageController.getFile(uploadPath)
-    }
-]
-
-/*
-module.exports = (server, uploadPath) => {
-    server.route({
-        method: "POST",
-        path: "/upload/{userId}",
-        options : {
-            payload: {
-                output: "stream",
-                parse: true,
-                allow: "multipart/form-data",
-                multipart: { output: 'stream' }
-            }
-
+    },
+    {
+        //Hämta specifik bild
+        method: 'GET',
+        path: '/image/{imageId}',
+        handler: imageController.getImage
+    },
+    {
+        //Radera bild
+        method: 'DELETE',
+        path: '/image/{imageId}',
+        options: {
+            pre: [
+                {
+                    method: authToken
+                }
+            ]
         },
-        handler: imageController.uploadFile(uploadPath)
-    })
+        handler: imageController.deleteImage(uploadPath)
+    },
+    {
+        //Uppdatera info under bild
+        method: 'PUT',
+        path: '/image/{imageId}',
+        options: {
+            pre: [
+                {
+                    method: authToken
+                }
 
-    // Route för att hämta bild
-    server.route({
-        method: 'GET',
-        path: '/upload',
-        handler: imageController.getImages()
-    });
+            ]
+        },
+        handler: imageController.updateImage
+    },
 
-    // Route för att hämta profilbild
-    server.route({
-        method: 'GET',
-        path: '/upload/{fileName}',
-        handler: imageController.getFile(uploadPath)
-    });
-}
-    */
+]
 
 module.exports = imageRouteArr;

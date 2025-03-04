@@ -1,7 +1,9 @@
+const { token } = require("@hapi/jwt");
 const User = require("../models/user.model");
 
 //JWT autentisering
 const jwt = require('jsonwebtoken');
+const { error } = require("@hapi/joi/lib/base");
 
 exports.getUsers = async (request, h) => {
 
@@ -58,13 +60,13 @@ exports.loginUser = async (request, h) => {
             //Generera token
             const token = generateToken(user);
 
-            const response = {
-                message: "Användare är inloggad",
-                token: token
-            }
             //console.log("Du är inloggad");
             return h
-                .response({ message: 'Du är inloggad', response }).code(200);
+                .response({
+                    message: 'Du är inloggad',
+                    token: token,
+                    user: user
+                }).code(200);
 
         }
 
@@ -77,7 +79,8 @@ exports.getUserPage = async (request, h) => {
     try {
         const username = request.username;
 
-        const user = await User.findOne(username);
+        const user = await User.findOne({username});
+        console.log(user)
 
         if (!user) {
             return h.response({ message: "Användare hittades inte" }).code(404);
@@ -85,10 +88,11 @@ exports.getUserPage = async (request, h) => {
 
         return h.response({
             message: "Du har tillgång till skyddad data",
-            user: user
+            user: user,
+            token: token
         }).code(200);
     }
-    catch (err) {
+    catch (error) {
         return h.response({ message: 'Något gick fel på serversidan' }).code(500);
     }
 
@@ -96,12 +100,12 @@ exports.getUserPage = async (request, h) => {
 
 //Genererar ny token JWT
 const generateToken = (user) => {
-    const payload = { user_name: user.user_name };
+    const payload = { username: user.username };
 
     // Generate the token using the payload and the secret key
     const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
         algorithm: 'HS256',
-        expiresIn: '10min'
+        expiresIn: '30min'
     });
     return token;
 
