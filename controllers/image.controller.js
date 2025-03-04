@@ -137,12 +137,26 @@ exports.getFile = (uploadPath) => async (request, h) => {
 exports.deleteImage = (uploadPath) => async (request, h) => {
     try {
         const { imageId } = request.params;
-        console.log(imageId);
+
+        //Hämtar username från token
+        const username = request.username;
+
         const image = await Image.findById(imageId);
         console.log(image);
-        const fileName = image.fileName;  // Hämta filnamnet från databasen
-        console.log('Filnamn att ta bort:', fileName);
 
+        if (!image) {
+            return h.response({ message: "Bilden finns inte" }).code(404);
+        }
+
+        const userExists = await User.findById(image.userId);
+        console.log(userExists);
+
+        //Kontrollerar om username från token är samma som äger bilden
+        if (username != userExists.username) {
+            return h.response({ message: "Användaren har inte tillgång till bilden" }).code(403);
+        }
+
+        const fileName = image.fileName;  // Hämta filnamnet från databasen
         const filePath = Path.join(uploadPath, fileName);
 
         if (!fs.existsSync(filePath)) {
@@ -172,16 +186,30 @@ exports.deleteImage = (uploadPath) => async (request, h) => {
 }
 
 exports.updateImage = async (request, h) => {
-    /*
-    const { imageId } = request.params;
-    //Hämta filen från request payload
 
-    console.log(request.payload);
-    const { title, description } = request.payload;
-    */
 
     try {
         const { imageId } = request.params;
+
+        //Hämtar username från token
+        const username = request.username;
+
+        console.log(username)
+
+        const image = await Image.findById(imageId);
+        console.log(image);
+
+        if (!image) {
+            return h.response({ message: "Bilden finns inte" }).code(404);
+        }
+
+        const userExists = await User.findById(image.userId);
+        console.log(userExists);
+
+        //Kontrollerar om username från token är samma som äger bilden
+        if (username != userExists.username) {
+            return h.response({ message: "Användaren har inte tillgång till bilden" }).code(403);
+        }
 
         const updatedImageInfo = await Image.findByIdAndUpdate(
             imageId,
