@@ -30,6 +30,14 @@ const userRouteArr = [
         //Hämta användare
         method: "GET",
         path: "/user",
+        options: {
+            pre: [
+                {
+                    method: authToken
+                }
+
+            ]
+        },
         handler: userController.getUsers
     },
     {

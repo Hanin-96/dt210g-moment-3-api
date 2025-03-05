@@ -8,6 +8,15 @@ const { error } = require("@hapi/joi/lib/base");
 exports.getUsers = async (request, h) => {
 
     try {
+        const username = request.username;
+
+        const user = await User.findOne({username});
+        console.log(user)
+
+        if (!user) {
+            return h.response({ message: "Användare hittades inte" }).code(404);
+        }
+        
         const users = await User.find();
         return h.response({
             message: "Lagrade användare",
