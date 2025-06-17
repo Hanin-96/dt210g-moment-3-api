@@ -1,6 +1,7 @@
 const { token } = require("@hapi/jwt");
 const User = require("../models/user.model");
 
+
 //JWT autentisering
 const jwt = require('jsonwebtoken');
 const { error } = require("@hapi/joi/lib/base");

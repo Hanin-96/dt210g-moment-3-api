@@ -2,8 +2,11 @@ const Path = require('path');
 const fs = require('fs');
 const Image = require("../models/image.model");
 const User = require('../models/user.model');
+const cloudinary = require('../cloudinary.config');
+const streamifier = require('streamifier');
 
-exports.uploadFile = (uploadPath) => async (request, h) => {
+
+exports.uploadFile = () => async (request, h) => {
 
     const { userId } = request.params; // hämtar in användar id som skickar som parameter
     const file = request.payload.file; // Hämta filen från request payload
@@ -26,52 +29,48 @@ exports.uploadFile = (uploadPath) => async (request, h) => {
         }
         console.log("Användare:", userExists);
 
-        //Filuppladdningen får unikt namn med timestamp
-        const fileName = `${Date.now()}-${file.hapi.filename}`;
+        //Ladda upp via Cloudinary
+        const uploadStream = () => {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'images',
+                        resource_type: 'image',
+                    },
+                    (error, result) => {
+                        if (result) resolve(result);
+                        else reject(error);
+                    }
+                );
 
-        // Kombinerar sökväg till uppladdningsmapp med filnamnet för att skapa sökvägen där filen ska sparas.
-        const path = Path.join(uploadPath, fileName);
+                streamifier.createReadStream(file._data).pipe(stream);
+            });
+        };
 
-        console.log("Image saved at: " + path);
-
-        /* 
-        Initierar writeSteam för att kunna skriva data till sökvägen ovan.
-        Detta öppnar filen i skrivläge. Om filen inte finns skapas den, och om den finns skrivs den över.
-        */
-        const writeStream = fs.createWriteStream(path);
-
-        // Skriver data (lagrar filen) på den valda platsen
-        await new Promise((resolve, reject) => {
-            file.pipe(writeStream)
-                .on('finish', resolve)
-                .on('error', reject);
-        });
+        const uploadResult = await uploadStream();
+        console.log("Cloudinary upload result:", uploadResult);
 
         const newImage = new Image({
-            fileName: fileName,
+            fileName: uploadResult.public_id,
             title: title,
             description: description,
             userId: userId,
+            imageUrl: uploadResult.secure_url,
             created: Date.now()
         });
 
         //Uppdaterar användare med url till filen
-        const uploadedImage = await newImage.save();
+        const savedImage = await newImage.save();
 
         return h.response({
             message: "Bild har lagrats",
-            savedImage: uploadedImage,
+            savedImage: savedImage,
         }).code(200);
 
-        //const uploadedImageSaved = await image.save();
-
-
-        //Returnerar url till bilden
-        //return h.response({ uploadedImageSaved: uploadedImageSaved })
 
     } catch (error) {
         console.error(error);
-        return h.response({ message: error }).code(500);
+        return h.response({ message: error.message }).code(500);
     }
 }
 
@@ -90,16 +89,15 @@ exports.getImage = async (request, h) => {
             return h.response({ error: "Bilden hittades inte" }).code(404);
         }
 
-        const imageUrl = image.fileName;
-
         return h.response({
             title: image.title,
             description: image.description,
-            fileName: imageUrl,
+            imageUrl: image.imageUrl,
             userId: image.userId?._id,
             username: image.userId?.username,
             firstname: image.userId?.firstname,
-            lastname: image.userId?.lastname
+            lastname: image.userId?.lastname,
+            created: image.created
 
         })
     } catch (error) {
@@ -110,29 +108,20 @@ exports.getImage = async (request, h) => {
 }
 
 exports.getFile = (uploadPath) => async (request, h) => {
-    //Bildens namn skickas med
     const { fileName } = request.params;
     try {
         const image = await Image.findOne({ fileName });
 
         if (!image) {
-            return h.response({ error: "Bilden hittades inte" }).code(404);
+            return h.response({ message: "Bilden hittades inte" }).code(404);
         }
 
-        const filePath = Path.join(uploadPath, fileName);
-
-        if (!fs.existsSync(filePath)) {
-            return h.response({ message: 'Fil kunde ej hittas' }).code(404);
-        }
-
-        return h.file(filePath); // Returnerar filen från servern
-
+        //Redirect till Cloudinary URL
+        return h.redirect(image.imageUrl);
     } catch (error) {
-        console.error(error);
-        return h.response({ message: error }).code(500);
+        return h.response({ message: error.message }).code(500);
     }
-
-}
+};
 
 exports.deleteImage = (uploadPath) => async (request, h) => {
     try {
@@ -142,7 +131,9 @@ exports.deleteImage = (uploadPath) => async (request, h) => {
         const username = request.username;
 
         const image = await Image.findById(imageId);
-        console.log(image);
+        console.log("image:", image);
+        console.log("Delete imageId:", imageId);
+
 
         if (!image) {
             return h.response({ message: "Bilden finns inte" }).code(404);
@@ -156,32 +147,18 @@ exports.deleteImage = (uploadPath) => async (request, h) => {
             return h.response({ message: "Användaren har inte tillgång till bilden" }).code(403);
         }
 
-        const fileName = image.fileName;  // Hämta filnamnet från databasen
-        const filePath = Path.join(uploadPath, fileName);
+        await cloudinary.uploader.destroy(image.fileName);
 
-        if (!fs.existsSync(filePath)) {
-            return h.response({ message: 'Fil kunde ej hittas' }).code(404);
-        }
-
-        if (!image) {
-            return h.response({ message: "Bilden finns inte i databasen" }).code(404);
-        }
-
-        // Ta bort bildposten från databasen
+        //Radera från databasen
         await Image.findByIdAndDelete(imageId);
-        console.log('Bild borttagen:', fileName);
+        console.log('Bild borttagen:', image.fileName);
 
-        //Ta bort bildfil från serverns filssystem
-        try {
-            await fs.promises.unlink(filePath);
-            return h.response({ message: "Bildfilen är borttagen" }).code(200);
-        } catch (error) {
-            return h.response({ message: "Det gick inte att ta bort bildfilen" }).code(500);
-        }
+        return h.response({ message: "Bildfilen är borttagen" }).code(200);
+
 
     } catch (error) {
         console.error(error);
-        return h.response(err).code(500);
+        return h.response(error).code(500);
     }
 }
 

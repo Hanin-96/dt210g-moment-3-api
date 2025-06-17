@@ -1,16 +1,17 @@
 //Initierar hapi
 const Hapi = require("@hapi/hapi");
 
-//Hämtar routes
-const routes = require('./routes/allRoutes');
-const userRoute = require('./routes/userRoute');
-const imageRoute = require('./routes/imageRoute');
+
+//Användning av .env fil för användning av variabler
+require("dotenv").config();
 
 //Hämtar databas koppling
 const databaseConnection = require('./database/connectDatabase');
 
-//Användning av .env fil för användning av variabler
-require("dotenv").config();
+//Hämtar routes
+//const routes = require('./routes/allRoutes');
+const userRoute = require('./routes/userRoute');
+const imageRoute = require('./routes/imageRoute');
 
 const Path = require('path');
 const Inert = require('@hapi/inert');
@@ -40,10 +41,12 @@ const init = async () => {
         }
     });
 
+    /*
     //Skapar uploads-katalog om den ej finns
     if (!fs.existsSync(UPLOAD_PATH)) {
         fs.mkdirSync(UPLOAD_PATH);
     }
+    */
 
     // Plugins
     await server.register(Inert);
@@ -51,7 +54,7 @@ const init = async () => {
     //Koppla till databasen
     databaseConnection();
 
-    server.route(imageRoute(UPLOAD_PATH));
+    server.route(imageRoute());
     server.route(userRoute);
 
     await server.start();

@@ -12,17 +12,15 @@ const imageRouteArr = (uploadPath) => [
                 output: "stream",
                 parse: true,
                 allow: "multipart/form-data",
-                multipart: { output: 'stream' }
+                multipart: { output: 'stream' },
+                maxBytes: 10485760
             },
-                pre: [
-                {
-                    method: authToken
-                }
-
+            pre: [
+                { method: authToken }
             ]
 
         },
-        handler: imageController.uploadFile(uploadPath)
+        handler: imageController.uploadFile()
     },
     {
         //Hämta alla bild url

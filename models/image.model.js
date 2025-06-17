@@ -23,6 +23,12 @@ const imageSchema = new Mongoose.Schema({
         unique: true,
         trim: true
     },
+    imageUrl: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
+    },
     userId: {
         type: Mongoose.Schema.Types.ObjectId,
         ref: 'User',
